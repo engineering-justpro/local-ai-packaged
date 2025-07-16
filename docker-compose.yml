@@ -27,6 +27,7 @@ x-n8n: &service-n8n
     - N8N_PERSONALIZATION_ENABLED=false
     - N8N_ENCRYPTION_KEY
     - N8N_USER_MANAGEMENT_JWT_SECRET
+    - N8N_SECURE_COOKIE=false
     - WEBHOOK_URL=${N8N_HOSTNAME:+https://}${N8N_HOSTNAME:-http://localhost:5678}
 
 x-ollama: &service-ollama
@@ -40,6 +41,7 @@ x-ollama: &service-ollama
     - OLLAMA_FLASH_ATTENTION=1
     - OLLAMA_KV_CACHE_TYPE=q8_0
     - OLLAMA_MAX_LOADED_MODELS=2
+    - OLLAMA_NUM_PARALLEL=4
   volumes:
     - ollama_storage:/root/.ollama
 
@@ -51,7 +53,11 @@ x-init-ollama: &init-ollama
   entrypoint: /bin/sh
   command:
     - "-c"
-    - "sleep 3; OLLAMA_HOST=ollama:11434 ollama pull qwen2.5:7b-instruct-q4_K_M; OLLAMA_HOST=ollama:11434 ollama pull nomic-embed-text"
+    - "sleep 3; OLLAMA_HOST=ollama:11434 ollama pull qwen2.5:7b-instruct-q4_K_M; OLLAMA_HOST=ollama:11434 ollama pull nomic-embed-text;  OLLAMA_HOST=ollama:11434 ollama pull qwen3:14b"
+    # For a larger context length verison of the model, run these commands:
+    # echo "FROM qwen2.5:7b-instruct-q4_K_M\n\nPARAMETER num_ctx 8096" > Modelfile
+    # ollama create qwen2.5:7b-8k -f ./Modelfile
+    # Change the name of the LLM and num_ctx as you see fit.
 
 services:
   flowise:
@@ -100,7 +106,9 @@ services:
     volumes:
       - n8n_storage:/home/node/.n8n
       - ./n8n/backup:/backup
-      - ./shared:/data/shared
+      - ./data/shared/JUSTPRO/JUSTPRO CONSULTANT TEAM - n8n:/data/shared/sharepoint
+      - ./data/shared/scheduler/odoo:/data/shared/odoo
+      - ./data/shared/scheduler/code:/data/shared/code
     depends_on:
       n8n-import:
         condition: service_completed_successfully
